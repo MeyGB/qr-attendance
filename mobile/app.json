@@ -1,0 +1,24 @@
+{
+  "expo": {
+    "name": "QR Attendance",
+    "slug": "qr-attendance-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.yourcompany.qrattendance"
+    },
+    "android": {
+      "package": "com.yourcompany.qrattendance"
+    },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow QR Attendance to access your camera to scan the check-in code."
+        }
+      ]
+    ]
+  }
+}

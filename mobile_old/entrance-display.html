@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Office Attendance - Scan to Check In/Out</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+      body {
+        margin: 0;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: #0f172a;
+        font-family:
+          -apple-system,
+          Segoe UI,
+          Roboto,
+          sans-serif;
+        color: #fff;
+      }
+      h1 {
+        font-size: 28px;
+        margin-bottom: 4px;
+      }
+      p.sub {
+        color: #94a3b8;
+        margin-top: 0;
+        margin-bottom: 24px;
+      }
+      #qrcode {
+        background: #fff;
+        padding: 24px;
+        border-radius: 16px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+      }
+      #status {
+        margin-top: 24px;
+        font-size: 14px;
+        color: #64748b;
+      }
+      #clock {
+        margin-top: 8px;
+        font-size: 32px;
+        font-weight: 700;
+        letter-spacing: 1px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Scan to Check In / Check Out</h1>
+    <p class="sub">
+      Code refreshes automatically. Open the app and scan with your camera.
+    </p>
+    <div id="qrcode"></div>
+    <div id="clock">--:--:--</div>
+    <div id="status">Connecting...</div>
+
+    <script>
+      // ------------------------------------------------------------------
+      // Change this to your backend's LAN IP address (same one your mobile
+      // app uses), so this page works from any device on the network,
+      // e.g. a dedicated tablet mounted at the entrance.
+      // ------------------------------------------------------------------
+      const API_BASE = "https://demo.lionkingfc.com/api";
+
+      const qrContainer = document.getElementById("qrcode");
+      const statusEl = document.getElementById("status");
+      const clockEl = document.getElementById("clock");
+
+      let qrCodeInstance = null;
+      let lastToken = null;
+
+      function renderQr(token) {
+        qrContainer.innerHTML = "";
+        qrCodeInstance = new QRCode(qrContainer, {
+          text: token,
+          width: 320,
+          height: 320,
+          correctLevel: QRCode.CorrectLevel.M,
+        });
+      }
+
+      async function fetchCurrentQr() {
+        try {
+          const res = await fetch(`${API_BASE}/attendance/current-qr`);
+          if (!res.ok) throw new Error("No active QR token yet");
+          const data = await res.json();
+
+          if (data.token !== lastToken) {
+            lastToken = data.token;
+            renderQr(data.token);
+          }
+          statusEl.textContent = "Live - code refreshes automatically";
+        } catch (err) {
+          statusEl.textContent = "Waiting for server... (" + err.message + ")";
+        }
+      }
+
+      function updateClock() {
+        clockEl.textContent = new Date().toLocaleTimeString();
+      }
+
+      fetchCurrentQr();
+      setInterval(fetchCurrentQr, 5000); // check for a new token every 5s
+      setInterval(updateClock, 1000);
+      updateClock();
+    </script>
+  </body>
+</html>

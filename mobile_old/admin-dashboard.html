@@ -1,0 +1,362 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Admin Dashboard - QR Attendance</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family:
+          -apple-system,
+          Segoe UI,
+          Roboto,
+          sans-serif;
+        background: #f1f5f9;
+        color: #0f172a;
+      }
+      header {
+        background: #0f172a;
+        color: #fff;
+        padding: 20px 32px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      header h1 {
+        font-size: 20px;
+        margin: 0;
+      }
+      #logoutBtn {
+        background: transparent;
+        border: 1px solid #475569;
+        color: #cbd5e1;
+        padding: 6px 14px;
+        border-radius: 6px;
+        cursor: pointer;
+      }
+      main {
+        padding: 32px;
+        max-width: 1100px;
+        margin: 0 auto;
+      }
+
+      /* Login screen */
+      #loginScreen {
+        max-width: 360px;
+        margin: 80px auto;
+        background: #fff;
+        padding: 32px;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+      }
+      #loginScreen h2 {
+        margin-top: 0;
+      }
+      input {
+        width: 100%;
+        padding: 12px;
+        margin-bottom: 12px;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        font-size: 14px;
+      }
+      button.primary {
+        width: 100%;
+        padding: 12px;
+        background: #2563eb;
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      #loginError {
+        color: #dc2626;
+        font-size: 13px;
+        margin-top: -6px;
+        margin-bottom: 12px;
+      }
+
+      /* Dashboard */
+      .hidden {
+        display: none;
+      }
+      .tabs {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 20px;
+      }
+      .tab {
+        padding: 8px 18px;
+        border-radius: 8px;
+        background: #e2e8f0;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 14px;
+      }
+      .tab.active {
+        background: #2563eb;
+        color: #fff;
+      }
+      .card {
+        background: #fff;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+      }
+      th,
+      td {
+        text-align: left;
+        padding: 10px 12px;
+        border-bottom: 1px solid #eef2f6;
+      }
+      th {
+        color: #64748b;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+      .status {
+        padding: 3px 10px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: capitalize;
+      }
+      .status.present {
+        background: #dcfce7;
+        color: #16a34a;
+      }
+      .status.late {
+        background: #fef3c7;
+        color: #d97706;
+      }
+      .status.absent {
+        background: #fee2e2;
+        color: #dc2626;
+      }
+      .status.half_day {
+        background: #ede9fe;
+        color: #7c3aed;
+      }
+      #loadingMsg,
+      #emptyMsg {
+        color: #94a3b8;
+        padding: 20px 0;
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="loginScreen">
+      <h2>Admin Login</h2>
+      <input
+        id="emailInput"
+        type="email"
+        placeholder="Email"
+        autocomplete="username"
+      />
+      <input
+        id="passwordInput"
+        type="password"
+        placeholder="Password"
+        autocomplete="current-password"
+      />
+      <div id="loginError" class="hidden"></div>
+      <button class="primary" onclick="handleLogin()">Log In</button>
+    </div>
+
+    <div id="dashboard" class="hidden">
+      <header>
+        <h1>QR Attendance - Admin Dashboard</h1>
+        <button id="logoutBtn" onclick="handleLogout()">Log Out</button>
+      </header>
+      <main>
+        <div class="tabs">
+          <div
+            class="tab active"
+            id="tabAttendance"
+            onclick="showTab('attendance')"
+          >
+            Attendance Records
+          </div>
+          <div class="tab" id="tabEmployees" onclick="showTab('employees')">
+            Employees
+          </div>
+        </div>
+
+        <div id="attendanceView" class="card">
+          <div id="attendanceLoading" class="hidden" id="loadingMsg">
+            Loading records...
+          </div>
+          <table id="attendanceTable">
+            <thead>
+              <tr>
+                <th>Employee</th>
+                <th>Code</th>
+                <th>Date</th>
+                <th>Check In</th>
+                <th>Check Out</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="attendanceBody"></tbody>
+          </table>
+          <div id="attendanceEmpty" class="hidden" id="emptyMsg">
+            No attendance records yet.
+          </div>
+        </div>
+
+        <div id="employeesView" class="card hidden">
+          <table id="employeesTable">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Code</th>
+                <th>Department</th>
+                <th>Role</th>
+                <th>Active</th>
+              </tr>
+            </thead>
+            <tbody id="employeesBody"></tbody>
+          </table>
+        </div>
+      </main>
+    </div>
+
+    <script>
+      // ------------------------------------------------------------------
+      // Change this to your backend's LAN IP (same one used in the mobile
+      // app and entrance display).
+      // ------------------------------------------------------------------
+      const API_BASE = "https://demo.lionkingfc.com/api";
+
+      let authToken = null;
+
+      async function handleLogin() {
+        const email = document.getElementById("emailInput").value.trim();
+        const password = document.getElementById("passwordInput").value;
+        const errorEl = document.getElementById("loginError");
+        errorEl.classList.add("hidden");
+
+        try {
+          const res = await fetch(`${API_BASE}/auth/login`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, password }),
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || "Login failed");
+
+          if (data.employee.role !== "admin") {
+            throw new Error("This account is not an admin.");
+          }
+
+          authToken = data.token;
+          document.getElementById("loginScreen").classList.add("hidden");
+          document.getElementById("dashboard").classList.remove("hidden");
+          loadAttendance();
+        } catch (err) {
+          errorEl.textContent = err.message;
+          errorEl.classList.remove("hidden");
+        }
+      }
+
+      function handleLogout() {
+        authToken = null;
+        document.getElementById("dashboard").classList.add("hidden");
+        document.getElementById("loginScreen").classList.remove("hidden");
+      }
+
+      function showTab(tab) {
+        document
+          .getElementById("tabAttendance")
+          .classList.toggle("active", tab === "attendance");
+        document
+          .getElementById("tabEmployees")
+          .classList.toggle("active", tab === "employees");
+        document
+          .getElementById("attendanceView")
+          .classList.toggle("hidden", tab !== "attendance");
+        document
+          .getElementById("employeesView")
+          .classList.toggle("hidden", tab !== "employees");
+        if (tab === "employees") loadEmployees();
+      }
+
+      async function authedFetch(path) {
+        const res = await fetch(`${API_BASE}${path}`, {
+          headers: { Authorization: `Bearer ${authToken}` },
+        });
+        if (!res.ok)
+          throw new Error((await res.json()).error || "Request failed");
+        return res.json();
+      }
+
+      function fmtTime(value) {
+        return value ? new Date(value).toLocaleString() : "—";
+      }
+
+      async function loadAttendance() {
+        const body = document.getElementById("attendanceBody");
+        body.innerHTML = "";
+        try {
+          const records = await authedFetch("/attendance/all");
+          if (records.length === 0) {
+            document
+              .getElementById("attendanceEmpty")
+              .classList.remove("hidden");
+            return;
+          }
+          document.getElementById("attendanceEmpty").classList.add("hidden");
+          records.forEach((r) => {
+            const row = document.createElement("tr");
+            row.innerHTML = `
+          <td>${r.full_name}</td>
+          <td>${r.employee_code}</td>
+          <td>${r.date}</td>
+          <td>${fmtTime(r.check_in_time)}</td>
+          <td>${fmtTime(r.check_out_time)}</td>
+          <td><span class="status ${r.status}">${r.status}</span></td>
+        `;
+            body.appendChild(row);
+          });
+        } catch (err) {
+          body.innerHTML = `<tr><td colspan="6">Error: ${err.message}</td></tr>`;
+        }
+      }
+
+      async function loadEmployees() {
+        const body = document.getElementById("employeesBody");
+        body.innerHTML = "";
+        try {
+          const employees = await authedFetch("/employees");
+          employees.forEach((e) => {
+            const row = document.createElement("tr");
+            row.innerHTML = `
+          <td>${e.full_name}</td>
+          <td>${e.email}</td>
+          <td>${e.employee_code}</td>
+          <td>${e.department || "—"}</td>
+          <td>${e.role}</td>
+          <td>${e.is_active ? "Yes" : "No"}</td>
+        `;
+            body.appendChild(row);
+          });
+        } catch (err) {
+          body.innerHTML = `<tr><td colspan="6">Error: ${err.message}</td></tr>`;
+        }
+      }
+    </script>
+  </body>
+</html>
