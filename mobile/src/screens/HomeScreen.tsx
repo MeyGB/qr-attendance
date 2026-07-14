@@ -77,6 +77,7 @@ export default function HomeScreen({ navigation }: Props) {
   const today = history.find((r) => isSameDate(r.date, todayISO()));
   const stats = monthStats(history);
   const recent = history.slice(0, 3);
+  console.log("stats", stats);
 
   let ctaLabel = "Check In Now";
   let ctaMode: "check-in" | "check-out" = "check-in";
@@ -85,7 +86,6 @@ export default function HomeScreen({ navigation }: Props) {
     ctaMode = "check-out";
   }
   const isDoneForToday = Boolean(today?.check_in_time && today?.check_out_time);
-  console.log(formatTime(today?.check_in_time ?? null));
 
   return (
     <ScrollView
