@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -8,34 +8,34 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-} from 'react-native';
-import { Feather } from '@expo/vector-icons';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '../types';
-import { api, saveSession } from '../services/api';
-import { colors, radius, spacing, monoFont } from '../theme/theme';
-import Button from '../components/Button';
+} from "react-native";
+import { Feather } from "@expo/vector-icons";
+import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import type { RootStackParamList } from "../types";
+import { api, saveSession } from "../services/api";
+import { colors, radius, spacing, monoFont } from "../theme/theme";
+import Button from "../components/Button";
 
-type Props = NativeStackScreenProps<RootStackParamList, 'Login'>;
+type Props = NativeStackScreenProps<RootStackParamList, "Login">;
 
 export default function LoginScreen({ navigation }: Props) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert('Missing info', 'Please enter both email and password.');
+      Alert.alert("Missing info", "Please enter both email and password.");
       return;
     }
     setLoading(true);
     try {
-      const { token } = await api.login(email, password);
-      await saveSession(token);
-      navigation.replace('Main');
+      const { token, employee } = await api.login(email, password);
+      await saveSession(token, employee);
+      navigation.replace(employee.role === "admin" ? "AdminMain" : "Main");
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Login failed';
-      Alert.alert('Login failed', message);
+      const message = err instanceof Error ? err.message : "Login failed";
+      Alert.alert("Login failed", message);
     } finally {
       setLoading(false);
     }
@@ -44,11 +44,14 @@ export default function LoginScreen({ navigation }: Props) {
   return (
     <KeyboardAvoidingView
       style={styles.flex}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        contentContainerStyle={styles.container}
+        keyboardShouldPersistTaps="handled"
+      >
         <View style={styles.stamp}>
-          <Text style={styles.stampText}>IN{'\n'}OUT</Text>
+          <Text style={styles.stampText}>IN{"\n"}OUT</Text>
         </View>
 
         <Text style={styles.title}>Welcome back</Text>
@@ -56,7 +59,12 @@ export default function LoginScreen({ navigation }: Props) {
 
         <View style={styles.form}>
           <View style={styles.inputWrapper}>
-            <Feather name="mail" size={18} color={colors.inkFaint} style={styles.inputIcon} />
+            <Feather
+              name="mail"
+              size={18}
+              color={colors.inkFaint}
+              style={styles.inputIcon}
+            />
             <TextInput
               style={styles.input}
               placeholder="Email"
@@ -69,7 +77,12 @@ export default function LoginScreen({ navigation }: Props) {
           </View>
 
           <View style={styles.inputWrapper}>
-            <Feather name="lock" size={18} color={colors.inkFaint} style={styles.inputIcon} />
+            <Feather
+              name="lock"
+              size={18}
+              color={colors.inkFaint}
+              style={styles.inputIcon}
+            />
             <TextInput
               style={styles.input}
               placeholder="Password"
@@ -82,7 +95,7 @@ export default function LoginScreen({ navigation }: Props) {
 
           <View style={{ marginTop: spacing.md }}>
             <Button
-              label={loading ? 'Signing in...' : 'Sign In'}
+              label={loading ? "Signing in..." : "Sign In"}
               onPress={handleLogin}
               disabled={loading}
             />
@@ -97,39 +110,39 @@ const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: colors.background },
   container: {
     flexGrow: 1,
-    justifyContent: 'center',
+    justifyContent: "center",
     padding: spacing.lg,
   },
   stamp: {
-    alignSelf: 'center',
+    alignSelf: "center",
     width: 88,
     height: 88,
     borderRadius: 44,
     borderWidth: 3,
     borderColor: colors.accent,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     marginBottom: spacing.lg,
-    transform: [{ rotate: '-8deg' }],
+    transform: [{ rotate: "-8deg" }],
   },
   stampText: {
     fontFamily: monoFont,
-    fontWeight: '700',
+    fontWeight: "700",
     fontSize: 15,
     color: colors.accent,
-    textAlign: 'center',
+    textAlign: "center",
     letterSpacing: 1,
   },
   title: {
     fontSize: 28,
-    fontWeight: '700',
+    fontWeight: "700",
     color: colors.ink,
-    textAlign: 'center',
+    textAlign: "center",
   },
   subtitle: {
     fontSize: 15,
     color: colors.inkSoft,
-    textAlign: 'center',
+    textAlign: "center",
     marginTop: 4,
     marginBottom: spacing.xl,
   },
@@ -137,8 +150,8 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   inputWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: colors.surface,
     borderRadius: radius.md,
     borderWidth: 1,

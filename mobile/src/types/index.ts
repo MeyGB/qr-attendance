@@ -1,6 +1,6 @@
-export type Role = 'employee' | 'admin';
+export type Role = "employee" | "admin";
 
-export type AttendanceStatus = 'present' | 'late' | 'absent' | 'half_day';
+export type AttendanceStatus = "present" | "late" | "absent" | "half_day";
 
 export interface Employee {
   id: number;
@@ -9,6 +9,7 @@ export interface Employee {
   employee_code: string;
   role: Role;
   department: string | null;
+  is_active?: boolean;
 }
 
 export interface AttendanceRecord {
@@ -18,6 +19,11 @@ export interface AttendanceRecord {
   check_in_time: string | null;
   check_out_time: string | null;
   status: AttendanceStatus;
+}
+
+export interface AdminAttendanceRecord extends AttendanceRecord {
+  full_name: string;
+  employee_code: string;
 }
 
 export interface LoginResponse {
@@ -38,18 +44,26 @@ export interface ApiErrorBody {
   error?: string;
 }
 
-export type ScanMode = 'check-in' | 'check-out';
+export type ScanMode = "check-in" | "check-out";
 
-// Root stack: full-screen flows (auth, the tab experience, and the modal scanner)
+// Root stack: full-screen flows (auth, the two role-specific tab experiences, and the modal scanner)
 export type RootStackParamList = {
   Login: undefined;
   Main: undefined;
+  AdminMain: undefined;
   Scan: { mode?: ScanMode } | undefined;
 };
 
-// Bottom tabs live inside "Main"
+// Bottom tabs live inside "Main" (employee role)
 export type MainTabParamList = {
   Home: undefined;
   History: undefined;
+  Profile: undefined;
+};
+
+// Bottom tabs live inside "AdminMain" (admin role)
+export type AdminTabParamList = {
+  Dashboard: undefined;
+  Manage: undefined;
   Profile: undefined;
 };
