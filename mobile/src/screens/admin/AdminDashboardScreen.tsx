@@ -1,26 +1,17 @@
 import React, { useCallback, useState } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  RefreshControl,
-} from "react-native";
-import { useFocusEffect } from "@react-navigation/native";
+import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity } from "react-native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
-import type { Employee, AdminAttendanceRecord } from "../../types";
+import type { RootStackParamList, Employee, AdminAttendanceRecord } from "../../types";
 import { api } from "../../services/api";
-import {
-  colors,
-  radius,
-  spacing,
-  monoFont,
-  shadow,
-  statusStyles,
-} from "../../theme/theme";
+import { colors, radius, spacing, monoFont, shadow, statusStyles } from "../../theme/theme";
 import { getGreeting, todayISO, isSameDate } from "../../utils/date";
 
+type Nav = NativeStackNavigationProp<RootStackParamList>;
+
 export default function AdminDashboardScreen() {
+  const navigation = useNavigation<Nav>();
   const [me, setMe] = useState<Employee | null>(null);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [todayRecords, setTodayRecords] = useState<AdminAttendanceRecord[]>([]);
@@ -63,24 +54,17 @@ export default function AdminDashboardScreen() {
   const activeEmployees = employees.filter((e) => e.is_active !== false);
   const checkedInToday = todayRecords.filter((r) => r.check_in_time).length;
   const lateToday = todayRecords.filter((r) => r.status === "late").length;
-  const notYetInToday = Math.max(
-    activeEmployees.length - todayRecords.length,
-    0,
-  );
+  const notYetInToday = Math.max(activeEmployees.length - todayRecords.length, 0);
   const recent = [...todayRecords]
     .filter((r) => r.check_in_time)
-    .sort((a, b) =>
-      (b.check_in_time ?? "").localeCompare(a.check_in_time ?? ""),
-    )
+    .sort((a, b) => (b.check_in_time ?? "").localeCompare(a.check_in_time ?? ""))
     .slice(0, 5);
 
   return (
     <ScrollView
       style={styles.container}
       contentContainerStyle={styles.content}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-      }
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
     >
       <View style={styles.header}>
         <Text style={styles.greeting}>{getGreeting()},</Text>
@@ -90,41 +74,47 @@ export default function AdminDashboardScreen() {
       {error && !loading && (
         <View style={[styles.errorCard, shadow.card]}>
           <Feather name="alert-triangle" size={16} color={colors.danger} />
-          <Text style={styles.errorText}>
-            Couldn't load dashboard data. Pull to retry.
-          </Text>
+          <Text style={styles.errorText}>Couldn't load dashboard data. Pull to retry.</Text>
         </View>
       )}
 
       <View style={styles.statsGrid}>
-        <StatCard
-          icon="users"
-          label="Employees"
-          value={activeEmployees.length}
-          color={colors.accent}
-          background={colors.accentSoft}
-        />
-        <StatCard
-          icon="check-circle"
-          label="Checked in today"
-          value={checkedInToday}
-          color={statusStyles.present.fg}
-          background={statusStyles.present.bg}
-        />
-        <StatCard
-          icon="clock"
-          label="Late today"
-          value={lateToday}
-          color={statusStyles.late.fg}
-          background={statusStyles.late.bg}
-        />
-        <StatCard
-          icon="user-x"
-          label="Not checked in"
-          value={notYetInToday}
-          color={statusStyles.absent.fg}
-          background={statusStyles.absent.bg}
-        />
+        <TouchableOpacity style={styles.statCardSlot} onPress={() => navigation.navigate("EmployeeList")}>
+          <StatCard
+            icon="users"
+            label="Employees"
+            value={activeEmployees.length}
+            color={colors.accent}
+            background={colors.accentSoft}
+          />
+        </TouchableOpacity>
+        <View style={styles.statCardSlot}>
+          <StatCard
+            icon="check-circle"
+            label="Checked in today"
+            value={checkedInToday}
+            color={statusStyles.present.fg}
+            background={statusStyles.present.bg}
+          />
+        </View>
+        <View style={styles.statCardSlot}>
+          <StatCard
+            icon="clock"
+            label="Late today"
+            value={lateToday}
+            color={statusStyles.late.fg}
+            background={statusStyles.late.bg}
+          />
+        </View>
+        <View style={styles.statCardSlot}>
+          <StatCard
+            icon="user-x"
+            label="Not checked in"
+            value={notYetInToday}
+            color={statusStyles.absent.fg}
+            background={statusStyles.absent.bg}
+          />
+        </View>
       </View>
 
       <Text style={styles.sectionTitle}>Recent check-ins today</Text>
@@ -143,7 +133,10 @@ export default function AdminDashboardScreen() {
             <Text style={styles.activityCode}>{r.employee_code}</Text>
           </View>
           <Text
-            style={[styles.activityTime, { color: statusStyles[r.status].fg }]}
+            style={[
+              styles.activityTime,
+              { color: statusStyles[r.status].fg },
+            ]}
           >
             {r.check_in_time
               ? new Date(r.check_in_time).toLocaleTimeString([], {
@@ -206,8 +199,8 @@ const styles = StyleSheet.create({
     gap: 10,
     marginBottom: spacing.lg,
   },
+  statCardSlot: { width: "47%" },
   statCard: {
-    width: "47%",
     backgroundColor: colors.surface,
     borderRadius: radius.lg,
     padding: spacing.md,
@@ -253,11 +246,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  activityAvatarText: {
-    color: colors.accentDeep,
-    fontWeight: "700",
-    fontSize: 14,
-  },
+  activityAvatarText: { color: colors.accentDeep, fontWeight: "700", fontSize: 14 },
   activityName: { fontSize: 14, fontWeight: "600", color: colors.ink },
   activityCode: { fontSize: 12, color: colors.inkFaint, fontFamily: monoFont },
   activityTime: { fontFamily: monoFont, fontSize: 13, fontWeight: "700" },

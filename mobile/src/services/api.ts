@@ -6,6 +6,9 @@ import type {
   AttendanceRecord,
   AdminAttendanceRecord,
   Employee,
+  Shift,
+  NewEmployeeInput,
+  UpdateEmployeeInput,
   ApiErrorBody,
 } from "../types";
 
@@ -76,12 +79,18 @@ export const api = {
 
   getAllAttendance: (): Promise<AdminAttendanceRecord[]> =>
     request<AdminAttendanceRecord[]>("/attendance/all"),
+
+  // Admin-only writes for Employee Management.
+  createEmployee: (data: NewEmployeeInput): Promise<{ id: number; message: string }> =>
+    request("/employees", { method: "POST", body: data as unknown as Record<string, unknown> }),
+
+  updateEmployee: (id: number, data: UpdateEmployeeInput): Promise<{ message: string }> =>
+    request(`/employees/${id}`, { method: "PUT", body: data as unknown as Record<string, unknown> }),
+
+  getShifts: (): Promise<Shift[]> => request<Shift[]>("/shifts"),
 };
 
-export async function saveSession(
-  token: string,
-  employee: Employee,
-): Promise<void> {
+export async function saveSession(token: string, employee: Employee): Promise<void> {
   await AsyncStorage.multiSet([
     [TOKEN_KEY, token],
     [EMPLOYEE_KEY, JSON.stringify(employee)],

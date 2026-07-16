@@ -1,14 +1,12 @@
 import React from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Alert,
-} from "react-native";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
+import type { RootStackParamList } from "../../types";
 import { colors, radius, spacing, shadow } from "../../theme/theme";
+
+type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 interface ManageItem {
   icon: keyof typeof Feather.glyphMap;
@@ -17,6 +15,7 @@ interface ManageItem {
   color: string;
   background: string;
   available: boolean;
+  onPress?: (navigation: Nav) => void;
 }
 
 const ITEMS: ManageItem[] = [
@@ -26,7 +25,8 @@ const ITEMS: ManageItem[] = [
     description: "Add, edit, and deactivate employee accounts",
     color: colors.accentDeep,
     background: colors.accentSoft,
-    available: false,
+    available: true,
+    onPress: (navigation) => navigation.navigate("EmployeeList"),
   },
   {
     icon: "calendar",
@@ -79,6 +79,8 @@ const ITEMS: ManageItem[] = [
 ];
 
 export default function AdminManageScreen() {
+  const navigation = useNavigation<Nav>();
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.header}>
@@ -92,10 +94,9 @@ export default function AdminManageScreen() {
           style={[styles.card, shadow.card]}
           activeOpacity={0.7}
           onPress={() =>
-            Alert.alert(
-              item.title,
-              "This section is coming in a future update.",
-            )
+            item.available && item.onPress
+              ? item.onPress(navigation)
+              : Alert.alert(item.title, "This section is coming in a future update.")
           }
         >
           <View style={[styles.iconWrap, { backgroundColor: item.background }]}>

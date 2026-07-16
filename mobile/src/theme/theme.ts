@@ -27,6 +27,10 @@ export const colors = {
 
   border: '#E7E1D8',
   white: '#FFFFFF',
+
+  success: '#16A34A',
+  successSoft: '#DCFCE7',
+
 } as const;
 
 export const statusStyles = {

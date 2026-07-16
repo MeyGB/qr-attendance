@@ -5,7 +5,7 @@ import { colors, radius } from '../theme/theme';
 interface Props {
   label: string;
   onPress: () => void;
-  variant?: 'primary' | 'secondary' | 'danger';
+  variant?: 'primary' | 'secondary' | 'danger' | 'success';
   disabled?: boolean;
 }
 
@@ -14,12 +14,14 @@ export default function Button({ label, onPress, variant = 'primary', disabled }
     primary: { backgroundColor: colors.accent },
     secondary: { backgroundColor: colors.surface, borderWidth: 1.5, borderColor: colors.accent },
     danger: { backgroundColor: colors.surface, borderWidth: 1.5, borderColor: colors.danger },
+    success: { backgroundColor: colors.surface, borderWidth: 1.5, borderColor: colors.success }
   }[variant];
 
   const textColorForVariant = {
     primary: colors.white,
     secondary: colors.accent,
     danger: colors.danger,
+    success: colors.success,
   }[variant];
 
   return (

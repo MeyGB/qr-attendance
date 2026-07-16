@@ -10,14 +10,14 @@ import LoginScreen from "../screens/LoginScreen";
 import ScanScreen from "../screens/ScanScreen";
 import MainTabs from "./MainTabs";
 import AdminTabs from "./AdminTabs";
+import EmployeeListScreen from "../screens/admin/EmployeeListScreen";
+import EmployeeFormScreen from "../screens/admin/EmployeeFormScreen";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function AppNavigator() {
   const [checkingSession, setCheckingSession] = useState(true);
-  const [initialRoute, setInitialRoute] = useState<
-    "Login" | "Main" | "AdminMain"
-  >("Login");
+  const [initialRoute, setInitialRoute] = useState<"Login" | "Main" | "AdminMain">("Login");
 
   useEffect(() => {
     (async () => {
@@ -50,6 +50,8 @@ export default function AppNavigator() {
         <Stack.Screen name="Main" component={MainTabs} />
         <Stack.Screen name="AdminMain" component={AdminTabs} />
         <Stack.Screen name="Scan" component={ScanScreen} />
+        <Stack.Screen name="EmployeeList" component={EmployeeListScreen} />
+        <Stack.Screen name="EmployeeForm" component={EmployeeFormScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
