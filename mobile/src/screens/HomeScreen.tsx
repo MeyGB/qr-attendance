@@ -7,6 +7,7 @@ import {
   RefreshControl,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { CompositeScreenProps } from "@react-navigation/native";
 import type { BottomTabScreenProps } from "@react-navigation/bottom-tabs";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
@@ -35,6 +36,7 @@ import {
 import Button from "../components/Button";
 import StatChip from "../components/StatChip";
 import TicketCard from "../components/TicketCard";
+import LoadingView from "../components/LoadingView";
 
 type Props = CompositeScreenProps<
   BottomTabScreenProps<MainTabParamList, "Home">,
@@ -42,6 +44,7 @@ type Props = CompositeScreenProps<
 >;
 
 export default function HomeScreen({ navigation }: Props) {
+  const insets = useSafeAreaInsets();
   const [me, setMe] = useState<Employee | null>(null);
   const [history, setHistory] = useState<AttendanceRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -77,7 +80,6 @@ export default function HomeScreen({ navigation }: Props) {
   const today = history.find((r) => isSameDate(r.date, todayISO()));
   const stats = monthStats(history);
   const recent = history.slice(0, 3);
-  console.log("stats", stats);
 
   let ctaLabel = "Check In Now";
   let ctaMode: "check-in" | "check-out" = "check-in";
@@ -87,10 +89,17 @@ export default function HomeScreen({ navigation }: Props) {
   }
   const isDoneForToday = Boolean(today?.check_in_time && today?.check_out_time);
 
+  if (loading) {
+    return <LoadingView />;
+  }
+
   return (
     <ScrollView
       style={styles.container}
-      contentContainerStyle={styles.content}
+      contentContainerStyle={[
+        styles.content,
+        { paddingTop: insets.top + spacing.md },
+      ]}
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }
@@ -162,7 +171,7 @@ export default function HomeScreen({ navigation }: Props) {
         </Text>
       </View>
 
-      {!loading && recent.length === 0 && (
+      {recent.length === 0 && (
         <Text style={styles.emptyText}>No attendance recorded yet.</Text>
       )}
 

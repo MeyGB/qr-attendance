@@ -9,6 +9,10 @@ import type {
   Shift,
   NewEmployeeInput,
   UpdateEmployeeInput,
+  LeaveRequest,
+  AdminLeaveRequest,
+  NewLeaveRequestInput,
+  LeaveStatus,
   ApiErrorBody,
 } from "../types";
 
@@ -81,16 +85,52 @@ export const api = {
     request<AdminAttendanceRecord[]>("/attendance/all"),
 
   // Admin-only writes for Employee Management.
-  createEmployee: (data: NewEmployeeInput): Promise<{ id: number; message: string }> =>
-    request("/employees", { method: "POST", body: data as unknown as Record<string, unknown> }),
+  createEmployee: (
+    data: NewEmployeeInput,
+  ): Promise<{ id: number; message: string }> =>
+    request("/employees", {
+      method: "POST",
+      body: data as unknown as Record<string, unknown>,
+    }),
 
-  updateEmployee: (id: number, data: UpdateEmployeeInput): Promise<{ message: string }> =>
-    request(`/employees/${id}`, { method: "PUT", body: data as unknown as Record<string, unknown> }),
+  updateEmployee: (
+    id: number,
+    data: UpdateEmployeeInput,
+  ): Promise<{ message: string }> =>
+    request(`/employees/${id}`, {
+      method: "PUT",
+      body: data as unknown as Record<string, unknown>,
+    }),
 
   getShifts: (): Promise<Shift[]> => request<Shift[]>("/shifts"),
+
+  submitLeaveRequest: (
+    data: NewLeaveRequestInput,
+  ): Promise<{ id: number; message: string }> =>
+    request("/leave", {
+      method: "POST",
+      body: data as unknown as Record<string, unknown>,
+    }),
+
+  getMyLeaveRequests: (): Promise<LeaveRequest[]> =>
+    request<LeaveRequest[]>("/leave/mine"),
+
+  // Leave requests (admin)
+  getAllLeaveRequests: (status?: LeaveStatus): Promise<AdminLeaveRequest[]> =>
+    request<AdminLeaveRequest[]>(`/leave${status ? `?status=${status}` : ""}`),
+
+  reviewLeaveRequest: (
+    id: number,
+    status: "approved" | "rejected",
+    review_note?: string,
+  ): Promise<{ message: string }> =>
+    request(`/leave/${id}`, { method: "PUT", body: { status, review_note } }),
 };
 
-export async function saveSession(token: string, employee: Employee): Promise<void> {
+export async function saveSession(
+  token: string,
+  employee: Employee,
+): Promise<void> {
   await AsyncStorage.multiSet([
     [TOKEN_KEY, token],
     [EMPLOYEE_KEY, JSON.stringify(employee)],

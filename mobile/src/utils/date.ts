@@ -8,8 +8,6 @@ export function todayISO(): string {
   return `${y}-${m}-${day}`;
 }
 
-console.log(todayISO);
-
 export function isSameDate(dateValue: string, isoDate: string): boolean {
   return dateValue.slice(0, 10) === isoDate;
 }
@@ -19,6 +17,15 @@ export function getGreeting(): string {
   if (hour < 12) return "Good morning";
   if (hour < 17) return "Good afternoon";
   return "Good evening";
+}
+
+export function formatLongDate(date: Date = new Date()): string {
+  return date.toLocaleDateString([], {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
 }
 
 export function formatTime(value: string | null): string {

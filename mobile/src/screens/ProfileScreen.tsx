@@ -2,11 +2,13 @@ import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, Alert } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList, Employee } from "../types";
 import { api, clearSession } from "../services/api";
 import { colors, radius, spacing, monoFont, shadow } from "../theme/theme";
 import Button from "../components/Button";
+import LoadingView from "../components/LoadingView";
 
 function initials(name: string): string {
   return name
@@ -21,13 +23,16 @@ function initials(name: string): string {
 export default function ProfileScreen() {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const insets = useSafeAreaInsets();
   const [me, setMe] = useState<Employee | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     api
       .getMe()
       .then(setMe)
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setLoading(false));
   }, []);
 
   const handleLogout = () => {
@@ -44,8 +49,12 @@ export default function ProfileScreen() {
     ]);
   };
 
+  if (loading) {
+    return <LoadingView />;
+  }
+
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top + spacing.lg }]}>
       <View style={styles.header}>
         <Text style={styles.title}>Profile</Text>
       </View>

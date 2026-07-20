@@ -19,19 +19,23 @@ import { api } from "../../services/api";
 import { colors, radius, spacing, shadow } from "../../theme/theme";
 import Button from "../../components/Button";
 import SelectField from "../../components/SelectField";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type Nav = NativeStackNavigationProp<RootStackParamList, "EmployeeForm">;
 type FormRoute = RouteProp<RootStackParamList, "EmployeeForm">;
 
 export default function EmployeeFormScreen() {
   const navigation = useNavigation<Nav>();
+  const insets = useSafeAreaInsets();
   const route = useRoute<FormRoute>();
   const editing = route.params?.employee ?? null;
   const isEdit = Boolean(editing);
 
   const [fullName, setFullName] = useState(editing?.full_name ?? "");
   const [email, setEmail] = useState(editing?.email ?? "");
-  const [employeeCode, setEmployeeCode] = useState(editing?.employee_code ?? "");
+  const [employeeCode, setEmployeeCode] = useState(
+    editing?.employee_code ?? "",
+  );
   const [department, setDepartment] = useState(editing?.department ?? "");
   const [password, setPassword] = useState("");
   const role: Role = editing?.role ?? "employee";
@@ -44,7 +48,10 @@ export default function EmployeeFormScreen() {
   const [isActive, setIsActive] = useState(editing?.is_active === 1);
 
   useEffect(() => {
-    api.getShifts().then(setShifts).catch(() => {});
+    api
+      .getShifts()
+      .then(setShifts)
+      .catch(() => {});
     console.log("Editing employee:", editing);
   }, []);
 
@@ -58,7 +65,10 @@ export default function EmployeeFormScreen() {
 
   const handleSave = async () => {
     if (!fullName || !email || !employeeCode) {
-      Alert.alert("Missing info", "Full name, email, and employee code are required.");
+      Alert.alert(
+        "Missing info",
+        "Full name, email, and employee code are required.",
+      );
       return;
     }
     if (!isEdit && !password) {
@@ -93,7 +103,8 @@ export default function EmployeeFormScreen() {
       }
       navigation.goBack();
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Something went wrong";
+      const message =
+        err instanceof Error ? err.message : "Something went wrong";
       Alert.alert("Couldn't save", message);
     } finally {
       setSaving(false);
@@ -119,7 +130,8 @@ export default function EmployeeFormScreen() {
               await api.updateEmployee(editing.id, { is_active: willActive });
               setIsActive(willActive);
             } catch (err) {
-              const message = err instanceof Error ? err.message : "Something went wrong";
+              const message =
+                err instanceof Error ? err.message : "Something went wrong";
               Alert.alert("Couldn't update", message);
             } finally {
               setTogglingActive(false);
@@ -135,23 +147,38 @@ export default function EmployeeFormScreen() {
       style={styles.flex}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+      <View style={[styles.header, { paddingTop: insets.top }]}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}
+        >
           <Feather name="arrow-left" size={20} color={colors.ink} />
         </TouchableOpacity>
-        <Text style={styles.title}>{isEdit ? "Edit Employee" : "New Employee"}</Text>
+        <Text style={styles.title}>
+          {isEdit ? "Edit Employee" : "New Employee"}
+        </Text>
         <View style={{ width: 28 }} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+      >
         {isEdit && !isActive && (
           <View style={[styles.inactiveBanner, shadow.card]}>
             <Feather name="alert-circle" size={16} color={colors.danger} />
-            <Text style={styles.inactiveBannerText}>This account is deactivated.</Text>
+            <Text style={styles.inactiveBannerText}>
+              This account is deactivated.
+            </Text>
           </View>
         )}
 
-        <Field label="Full name" value={fullName} onChangeText={setFullName} placeholder="Jane Doe" />
+        <Field
+          label="Full name"
+          value={fullName}
+          onChangeText={setFullName}
+          placeholder="Jane Doe"
+        />
         <Field
           label="Email"
           value={email}
@@ -177,10 +204,11 @@ export default function EmployeeFormScreen() {
           label={isEdit ? "New password (optional)" : "Password"}
           value={password}
           onChangeText={setPassword}
-          placeholder={isEdit ? "Leave blank to keep current" : "Set a password"}
+          placeholder={
+            isEdit ? "Leave blank to keep current" : "Set a password"
+          }
           secureTextEntry
         />
-
 
         <View style={styles.fieldWrap}>
           <SelectField
@@ -192,7 +220,11 @@ export default function EmployeeFormScreen() {
         </View>
 
         <View style={{ marginTop: spacing.lg }}>
-          <Button label={saving ? "Saving..." : "Save Employee"} onPress={handleSave} disabled={saving} />
+          <Button
+            label={saving ? "Saving..." : "Save Employee"}
+            onPress={handleSave}
+            disabled={saving}
+          />
         </View>
 
         {isEdit && (
@@ -260,7 +292,13 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.sm,
   },
   backButton: { padding: 4 },
-  title: { flex: 1, textAlign: "center", fontSize: 17, fontWeight: "700", color: colors.ink },
+  title: {
+    flex: 1,
+    textAlign: "center",
+    fontSize: 17,
+    fontWeight: "700",
+    color: colors.ink,
+  },
   content: { padding: spacing.lg, paddingBottom: spacing.xxl, gap: spacing.md },
 
   inactiveBanner: {

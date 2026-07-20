@@ -14,11 +14,14 @@ import { Feather } from "@expo/vector-icons";
 import type { RootStackParamList, Employee } from "../../types";
 import { api } from "../../services/api";
 import { colors, radius, spacing, shadow } from "../../theme/theme";
+import LoadingView from "@/components/LoadingView";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 export default function EmployeeListScreen() {
   const navigation = useNavigation<Nav>();
+  const insets = useSafeAreaInsets();
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
@@ -60,12 +63,13 @@ export default function EmployeeListScreen() {
       )
     : employees;
 
+  if (loading) {
+    return <LoadingView />;
+  }
+
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Feather name="arrow-left" size={20} color={colors.ink} />
-        </TouchableOpacity>
         <Text style={styles.title}>Employees</Text>
         <TouchableOpacity
           style={styles.addButton}
@@ -76,7 +80,12 @@ export default function EmployeeListScreen() {
       </View>
 
       <View style={styles.searchWrap}>
-        <Feather name="search" size={16} color={colors.inkFaint} style={{ marginRight: 8 }} />
+        <Feather
+          name="search"
+          size={16}
+          color={colors.inkFaint}
+          style={{ marginRight: 8 }}
+        />
         <TextInput
           style={styles.searchInput}
           placeholder="Search by name, email, code, department"
@@ -90,7 +99,9 @@ export default function EmployeeListScreen() {
       {error && !loading && (
         <View style={[styles.errorCard, shadow.card]}>
           <Feather name="alert-triangle" size={16} color={colors.danger} />
-          <Text style={styles.errorText}>Couldn't load employees. Pull to retry.</Text>
+          <Text style={styles.errorText}>
+            Couldn't load employees. Pull to retry.
+          </Text>
         </View>
       )}
 
@@ -98,7 +109,9 @@ export default function EmployeeListScreen() {
         data={filtered}
         keyExtractor={(item) => String(item.id)}
         contentContainerStyle={styles.listContent}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
         ListEmptyComponent={
           !loading ? (
             <Text style={styles.emptyText}>
@@ -109,18 +122,30 @@ export default function EmployeeListScreen() {
         renderItem={({ item }) => (
           <TouchableOpacity
             style={[styles.row, shadow.card]}
-            onPress={() => navigation.navigate("EmployeeForm", { employee: item })}
+            onPress={() =>
+              navigation.navigate("EmployeeForm", { employee: item })
+            }
           >
             <View
               style={[
                 styles.avatar,
-                { backgroundColor: item.is_active === false ? colors.surfaceSunken : colors.accentSoft },
+                {
+                  backgroundColor:
+                    item.is_active === 0
+                      ? colors.surfaceSunken
+                      : colors.accentSoft,
+                },
               ]}
             >
               <Text
                 style={[
                   styles.avatarText,
-                  { color: item.is_active === false ? colors.inkFaint : colors.accentDeep },
+                  {
+                    color:
+                      item.is_active === 0
+                        ? colors.inkFaint
+                        : colors.accentDeep,
+                  },
                 ]}
               >
                 {item.full_name.slice(0, 1).toUpperCase()}
@@ -134,7 +159,7 @@ export default function EmployeeListScreen() {
                     <Text style={styles.adminBadgeText}>Admin</Text>
                   </View>
                 )}
-                {item.is_active === false && (
+                {item.is_active === 0 && (
                   <View style={styles.inactiveBadge}>
                     <Text style={styles.inactiveBadgeText}>Inactive</Text>
                   </View>
@@ -184,7 +209,12 @@ const styles = StyleSheet.create({
     marginHorizontal: spacing.lg,
     marginBottom: spacing.sm,
   },
-  searchInput: { flex: 1, paddingVertical: 12, fontSize: 14, color: colors.ink },
+  searchInput: {
+    flex: 1,
+    paddingVertical: 12,
+    fontSize: 14,
+    color: colors.ink,
+  },
 
   errorCard: {
     flexDirection: "row",
@@ -198,8 +228,16 @@ const styles = StyleSheet.create({
   },
   errorText: { color: colors.danger, fontSize: 13, flex: 1 },
 
-  listContent: { padding: spacing.lg, paddingTop: spacing.xs, paddingBottom: spacing.xxl },
-  emptyText: { textAlign: "center", color: colors.inkFaint, marginTop: spacing.xl },
+  listContent: {
+    padding: spacing.lg,
+    paddingTop: spacing.xs,
+    paddingBottom: spacing.xxl,
+  },
+  emptyText: {
+    textAlign: "center",
+    color: colors.inkFaint,
+    marginTop: spacing.xl,
+  },
 
   row: {
     flexDirection: "row",
