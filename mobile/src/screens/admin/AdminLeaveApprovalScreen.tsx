@@ -7,6 +7,8 @@ import {
   TouchableOpacity,
   RefreshControl,
   Alert,
+  Modal,
+  ScrollView,
 } from "react-native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -48,12 +50,42 @@ const FILTERS: { key: FilterKey; label: string }[] = [
   { key: "all", label: "All" },
 ];
 
+// The backend sends DATE columns as full ISO datetime strings (e.g.
+// "2026-07-15T00:00:00.000Z"), not plain "YYYY-MM-DD" — always take just the
+// date portion before building a local Date, or you get "Invalid Date".
+function dateOnly(value: string): string {
+  return value.slice(0, 10);
+}
+
+function formatShort(value: string): string {
+  return new Date(`${dateOnly(value)}T00:00:00`).toLocaleDateString([], {
+    month: "short",
+    day: "numeric",
+  });
+}
+
+function formatFull(value: string): string {
+  return new Date(`${dateOnly(value)}T00:00:00`).toLocaleDateString([], {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+function formatSubmittedAt(value: string): string {
+  return new Date(value).toLocaleString([], {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 function formatRange(start: string, end: string): string {
-  const opts: Intl.DateTimeFormatOptions = { month: "short", day: "numeric" };
-  const startLabel = new Date(`${start}T00:00:00`).toLocaleDateString([], opts);
-  if (start === end) return startLabel;
-  const endLabel = new Date(`${end}T00:00:00`).toLocaleDateString([], opts);
-  return `${startLabel} – ${endLabel}`;
+  const startLabel = formatShort(start);
+  if (dateOnly(start) === dateOnly(end)) return startLabel;
+  return `${startLabel} – ${formatShort(end)}`;
 }
 
 export default function AdminLeaveApprovalScreen() {
@@ -65,6 +97,7 @@ export default function AdminLeaveApprovalScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(false);
   const [actingId, setActingId] = useState<number | null>(null);
+  const [selected, setSelected] = useState<AdminLeaveRequest | null>(null);
 
   const load = useCallback(async (activeFilter: FilterKey) => {
     try {
@@ -109,6 +142,7 @@ export default function AdminLeaveApprovalScreen() {
             setActingId(request.id);
             try {
               await api.reviewLeaveRequest(request.id, status);
+              setSelected(null);
               load(filter);
             } catch (err) {
               const message =
@@ -183,65 +217,175 @@ export default function AdminLeaveApprovalScreen() {
           </Text>
         }
         renderItem={({ item }) => (
-          <View style={[styles.card, shadow.card]}>
-            <View style={styles.cardTopRow}>
-              <View style={styles.avatar}>
-                <Text style={styles.avatarText}>
-                  {item.full_name.slice(0, 1).toUpperCase()}
-                </Text>
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.name}>{item.full_name}</Text>
-                <Text style={styles.subtext}>{item.employee_code}</Text>
-              </View>
-              <View
+          <TouchableOpacity
+            style={[styles.card, shadow.card]}
+            activeOpacity={0.7}
+            onPress={() => setSelected(item)}
+          >
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText}>
+                {item.full_name.slice(0, 1).toUpperCase()}
+              </Text>
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.name}>{item.full_name}</Text>
+              <Text style={styles.subtext}>
+                {LEAVE_TYPE_LABELS[item.leave_type] ?? item.leave_type} ·{" "}
+                {item.days} {item.days === 1 ? "day" : "days"}
+                {"\n"}
+                {formatRange(item.start_date, item.end_date)}
+              </Text>
+            </View>
+            <View
+              style={[
+                styles.statusBadge,
+                { backgroundColor: STATUS_STYLES[item.status].bg },
+              ]}
+            >
+              <Text
                 style={[
-                  styles.statusBadge,
-                  { backgroundColor: STATUS_STYLES[item.status].bg },
+                  styles.statusText,
+                  { color: STATUS_STYLES[item.status].fg },
                 ]}
               >
-                <Text
-                  style={[
-                    styles.statusText,
-                    { color: STATUS_STYLES[item.status].fg },
-                  ]}
-                >
-                  {STATUS_STYLES[item.status].label}
-                </Text>
-              </View>
+                {STATUS_STYLES[item.status].label}
+              </Text>
             </View>
-
-            <Text style={styles.leaveType}>
-              {LEAVE_TYPE_LABELS[item.leave_type] ?? item.leave_type}
-            </Text>
-            <Text style={styles.dateRange}>
-              {formatRange(item.start_date, item.end_date)} · {item.days}{" "}
-              {item.days === 1 ? "day" : "days"}
-            </Text>
-            {item.reason && <Text style={styles.reason}>{item.reason}</Text>}
-
-            {item.status === "pending" && (
-              <View style={styles.actionsRow}>
-                <View style={{ flex: 1 }}>
-                  <Button
-                    label="Reject"
-                    variant="danger"
-                    onPress={() => handleReview(item, "rejected")}
-                    disabled={actingId === item.id}
-                  />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Button
-                    label="Approve"
-                    onPress={() => handleReview(item, "approved")}
-                    disabled={actingId === item.id}
-                  />
-                </View>
-              </View>
-            )}
-          </View>
+            <Feather name="chevron-right" size={18} color={colors.inkFaint} />
+          </TouchableOpacity>
         )}
       />
+
+      {/* Detail modal */}
+      <Modal
+        visible={selected !== null}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setSelected(null)}
+      >
+        <View style={styles.backdrop}>
+          <TouchableOpacity
+            style={StyleSheet.absoluteFillObject}
+            activeOpacity={1}
+            onPress={() => setSelected(null)}
+          />
+          {selected && (
+            <View style={styles.sheet}>
+              <View style={styles.sheetHandle} />
+
+              <ScrollView showsVerticalScrollIndicator={false}>
+                <View style={styles.sheetHeaderRow}>
+                  <View style={styles.avatarLg}>
+                    <Text style={styles.avatarLgText}>
+                      {selected.full_name.slice(0, 1).toUpperCase()}
+                    </Text>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.sheetName}>{selected.full_name}</Text>
+                    <Text style={styles.sheetSubtext}>
+                      {selected.employee_code}
+                    </Text>
+                  </View>
+                  <View
+                    style={[
+                      styles.statusBadge,
+                      { backgroundColor: STATUS_STYLES[selected.status].bg },
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.statusText,
+                        { color: STATUS_STYLES[selected.status].fg },
+                      ]}
+                    >
+                      {STATUS_STYLES[selected.status].label}
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>Leave type</Text>
+                  <Text style={styles.detailValue}>
+                    {LEAVE_TYPE_LABELS[selected.leave_type] ??
+                      selected.leave_type}
+                  </Text>
+                </View>
+
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>Start date</Text>
+                  <Text style={styles.detailValue}>
+                    {formatFull(selected.start_date)}
+                  </Text>
+                </View>
+
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>End date</Text>
+                  <Text style={styles.detailValue}>
+                    {formatFull(selected.end_date)}
+                  </Text>
+                </View>
+
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>Duration</Text>
+                  <Text style={styles.detailValue}>
+                    {selected.days} {selected.days === 1 ? "day" : "days"}
+                  </Text>
+                </View>
+
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>Submitted</Text>
+                  <Text style={styles.detailValue}>
+                    {formatSubmittedAt(selected.created_at)}
+                  </Text>
+                </View>
+
+                <View style={styles.reasonBlock}>
+                  <Text style={styles.detailLabel}>Reason</Text>
+                  <Text style={styles.reasonText}>
+                    {selected.reason || "No reason provided."}
+                  </Text>
+                </View>
+
+                {selected.status !== "pending" && (
+                  <View style={styles.reviewBlock}>
+                    <Text style={styles.detailLabel}>
+                      {selected.status === "approved" ? "Approved" : "Rejected"}
+                      {selected.reviewed_at
+                        ? ` · ${formatSubmittedAt(selected.reviewed_at)}`
+                        : ""}
+                    </Text>
+                    {selected.review_note && (
+                      <Text style={styles.reasonText}>
+                        {selected.review_note}
+                      </Text>
+                    )}
+                  </View>
+                )}
+
+                {selected.status === "pending" && (
+                  <View style={styles.actionsRow}>
+                    <View style={{ flex: 1 }}>
+                      <Button
+                        label="Reject"
+                        variant="danger"
+                        onPress={() => handleReview(selected, "rejected")}
+                        disabled={actingId === selected.id}
+                      />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Button
+                        label="Approve"
+                        onPress={() => handleReview(selected, "approved")}
+                        disabled={actingId === selected.id}
+                      />
+                    </View>
+                  </View>
+                )}
+              </ScrollView>
+            </View>
+          )}
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -304,21 +448,18 @@ const styles = StyleSheet.create({
   },
 
   card: {
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: colors.surface,
     borderRadius: radius.lg,
     padding: spacing.md,
     marginBottom: spacing.sm,
-  },
-  cardTopRow: {
-    flexDirection: "row",
-    alignItems: "center",
     gap: spacing.sm,
-    marginBottom: spacing.sm,
   },
   avatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: colors.accentSoft,
     alignItems: "center",
     justifyContent: "center",
@@ -327,15 +468,6 @@ const styles = StyleSheet.create({
   name: { fontSize: 14, fontWeight: "700", color: colors.ink },
   subtext: { fontSize: 12, color: colors.inkFaint, marginTop: 2 },
 
-  leaveType: { fontSize: 14, fontWeight: "600", color: colors.ink },
-  dateRange: { fontSize: 13, color: colors.inkSoft, marginTop: 2 },
-  reason: {
-    fontSize: 13,
-    color: colors.inkSoft,
-    marginTop: spacing.sm,
-    lineHeight: 18,
-  },
-
   statusBadge: {
     borderRadius: radius.pill,
     paddingHorizontal: 10,
@@ -343,5 +475,64 @@ const styles = StyleSheet.create({
   },
   statusText: { fontSize: 11, fontWeight: "700" },
 
-  actionsRow: { flexDirection: "row", gap: spacing.sm, marginTop: spacing.md },
+  actionsRow: { flexDirection: "row", gap: spacing.sm, marginTop: spacing.lg },
+
+  backdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.4)",
+    justifyContent: "flex-end",
+  },
+  sheet: {
+    backgroundColor: colors.surface,
+    borderTopLeftRadius: radius.lg,
+    borderTopRightRadius: radius.lg,
+    padding: spacing.lg,
+    maxHeight: "85%",
+  },
+  sheetHandle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: colors.border,
+    alignSelf: "center",
+    marginBottom: spacing.md,
+  },
+  sheetHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    marginBottom: spacing.lg,
+  },
+  avatarLg: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: colors.accentSoft,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  avatarLgText: { color: colors.accentDeep, fontWeight: "700", fontSize: 18 },
+  sheetName: { fontSize: 16, fontWeight: "700", color: colors.ink },
+  sheetSubtext: { fontSize: 12, color: colors.inkFaint, marginTop: 2 },
+
+  detailRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  detailLabel: { fontSize: 13, color: colors.inkSoft, fontWeight: "600" },
+  detailValue: { fontSize: 13, color: colors.ink, fontWeight: "600" },
+
+  reasonBlock: { marginTop: spacing.md },
+  reasonText: { fontSize: 14, color: colors.ink, lineHeight: 20, marginTop: 6 },
+
+  reviewBlock: {
+    marginTop: spacing.md,
+    paddingTop: spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
 });

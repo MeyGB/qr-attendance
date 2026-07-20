@@ -64,6 +64,11 @@ export default function AdminDashboardScreen() {
         attendanceResult.filter((r) => isSameDate(r.date, todayISO())),
       );
       setLeaveRequests(leaveResult);
+      // console.log(meResult);
+      // console.log(employeesResult);
+      // console.log(attendanceResult);
+      // console.log(leaveResult);
+
       setError(false);
     } catch {
       setError(true);
@@ -211,6 +216,7 @@ export default function AdminDashboardScreen() {
           label="Approve Leave Requests"
           color={colors.danger}
           background={colors.dangerSoft}
+          badge={pendingRequests.length}
           onPress={() => navigation.navigate("LeaveApproval")}
         />
         <ActionCard
@@ -319,12 +325,14 @@ function ActionCard({
   label,
   color,
   background,
+  badge,
   onPress,
 }: {
   icon: keyof typeof Feather.glyphMap;
   label: string;
   color: string;
   background: string;
+  badge?: number;
   onPress: () => void;
 }) {
   return (
@@ -340,8 +348,16 @@ function ActionCard({
 
         <Text style={styles.actionLabel}>{label}</Text>
       </View>
-
-      <Feather name="chevron-right" size={20} color="#9CA3AF" />
+      <View style={styles.actionRight}>
+        {badge !== undefined && badge > 0 && (
+          <View style={styles.actionBadge}>
+            <Text style={styles.actionBadgeText}>
+              {badge > 9 ? "9+" : badge}
+            </Text>
+          </View>
+        )}
+        <Feather name="chevron-right" size={20} color="#9CA3AF" />
+      </View>
     </TouchableOpacity>
   );
 }
@@ -549,6 +565,26 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
     color: "#111827",
+  },
+
+  actionRight: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+
+  actionBadge: {
+    minWidth: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: colors.danger,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  actionBadgeText: {
+    color: colors.white,
+    fontSize: 11,
+    fontWeight: "600",
   },
 
   emptyCard: {
