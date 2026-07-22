@@ -69,7 +69,7 @@ export default function MainTabs() {
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="History" component={HistoryScreen} />
       <Tab.Screen
-        name="Scan"
+        name="ScanTab"
         component={ScanTabPlaceholder}
         options={{
           tabBarButton: () => (

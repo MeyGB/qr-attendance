@@ -138,7 +138,7 @@ export type RootStackParamList = {
 export type MainTabParamList = {
   Home: undefined;
   History: undefined;
-  Scan: undefined; // intercepted to open the root Scan modal, see MainTabs.tsx
+  ScanTab: undefined; // intercepted to open the root Scan modal, see MainTabs.tsx
   Leave: undefined;
   Profile: undefined;
 };
