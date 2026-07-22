@@ -260,7 +260,7 @@ export default function AdminLeaveApprovalScreen() {
       <Modal
         visible={selected !== null}
         transparent
-        animationType="slide"
+        animationType="fade"
         onRequestClose={() => setSelected(null)}
       >
         <View style={styles.backdrop}>

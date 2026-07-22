@@ -13,6 +13,9 @@ import AdminTabs from "./AdminTabs";
 import EmployeeFormScreen from "../screens/admin/EmployeeFormScreen";
 import LeaveFormScreen from "../screens/LeaveFormScreen";
 import AdminLeaveApprovalScreen from "../screens/admin/AdminLeaveApprovalScreen";
+import AnnouncementListScreen from "../screens/AnnouncementListScreen";
+import AdminAnnouncementsScreen from "../screens/admin/AdminAnnouncementsScreen";
+import AnnouncementFormScreen from "../screens/admin/AnnouncementFormScreen";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -55,6 +58,18 @@ export default function AppNavigator() {
         <Stack.Screen name="Scan" component={ScanScreen} />
         <Stack.Screen name="EmployeeForm" component={EmployeeFormScreen} />
         <Stack.Screen name="LeaveForm" component={LeaveFormScreen} />
+        <Stack.Screen
+          name="AnnouncementList"
+          component={AnnouncementListScreen}
+        />
+        <Stack.Screen
+          name="AdminAnnouncements"
+          component={AdminAnnouncementsScreen}
+        />
+        <Stack.Screen
+          name="AnnouncementForm"
+          component={AnnouncementFormScreen}
+        />
         <Stack.Screen
           name="LeaveApproval"
           component={AdminLeaveApprovalScreen}

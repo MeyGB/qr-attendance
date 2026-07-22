@@ -34,11 +34,24 @@ const STATUS_STYLES: Record<
   rejected: { fg: colors.danger, bg: colors.dangerSoft, label: "Rejected" },
 };
 
+// function formatRange(start: string, end: string): string {
+//   const opts: Intl.DateTimeFormatOptions = { month: "short", day: "numeric" };
+//   const startLabel = new Date(`${start}T00:00:00`).toLocaleDateString([], opts);
+//   if (start === end) return startLabel;
+//   const endLabel = new Date(`${end}T00:00:00`).toLocaleDateString([], opts);
+//   return `${startLabel} – ${endLabel}`;
+// }
+
 function formatRange(start: string, end: string): string {
   const opts: Intl.DateTimeFormatOptions = { month: "short", day: "numeric" };
-  const startLabel = new Date(`${start}T00:00:00`).toLocaleDateString([], opts);
-  if (start === end) return startLabel;
-  const endLabel = new Date(`${end}T00:00:00`).toLocaleDateString([], opts);
+  const startOnly = start.slice(0, 10);
+  const endOnly = end.slice(0, 10);
+  const startLabel = new Date(`${startOnly}T00:00:00`).toLocaleDateString(
+    [],
+    opts,
+  );
+  if (startOnly === endOnly) return startLabel;
+  const endLabel = new Date(`${endOnly}T00:00:00`).toLocaleDateString([], opts);
   return `${startLabel} – ${endLabel}`;
 }
 

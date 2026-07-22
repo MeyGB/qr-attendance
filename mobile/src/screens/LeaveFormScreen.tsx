@@ -51,26 +51,46 @@ export default function LeaveFormScreen() {
       ? daysInclusive(startDate, endDate)
       : null;
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     if (!startDate || !endDate) {
       Alert.alert("Missing dates", "Please select a start and end date.");
       return;
     }
+
     if (endDate < startDate) {
       Alert.alert("Invalid dates", "End date can't be before the start date.");
       return;
     }
 
+    Alert.alert(
+      "Confirm Leave Request",
+      `Submit your ${leaveType} request from ${startDate} to ${endDate}?`,
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Submit",
+          onPress: submitLeaveRequest,
+        },
+      ],
+    );
+  };
+
+  const submitLeaveRequest = async () => {
     setSubmitting(true);
+
     try {
       await api.submitLeaveRequest({
         leave_type: leaveType,
-        start_date: startDate,
-        end_date: endDate,
+        start_date: startDate!,
+        end_date: endDate!,
         reason: reason || undefined,
       });
+
       Alert.alert(
-        "Request submitted",
+        "Request Submitted",
         "Your leave request has been sent for approval.",
         [{ text: "OK", onPress: () => navigation.goBack() }],
       );

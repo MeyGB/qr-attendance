@@ -238,7 +238,7 @@ export default function AdminDashboardScreen() {
           label="Announcements"
           color={colors.violet}
           background={colors.violetSoft}
-          onPress={() => soon("Announcements")}
+          onPress={() => navigation.navigate("AdminAnnouncements")}
         />
       </View>
 

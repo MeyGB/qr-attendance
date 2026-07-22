@@ -13,6 +13,8 @@ import type {
   AdminLeaveRequest,
   NewLeaveRequestInput,
   LeaveStatus,
+  Announcement,
+  NewAnnouncementInput,
   ApiErrorBody,
 } from "../types";
 
@@ -125,6 +127,30 @@ export const api = {
     review_note?: string,
   ): Promise<{ message: string }> =>
     request(`/leave/${id}`, { method: "PUT", body: { status, review_note } }),
+
+  // Announcements (everyone can read, only admins can write)
+  getAnnouncements: (): Promise<Announcement[]> =>
+    request<Announcement[]>("/announcements"),
+
+  createAnnouncement: (
+    data: NewAnnouncementInput,
+  ): Promise<{ id: number; message: string }> =>
+    request("/announcements", {
+      method: "POST",
+      body: data as unknown as Record<string, unknown>,
+    }),
+
+  updateAnnouncement: (
+    id: number,
+    data: NewAnnouncementInput,
+  ): Promise<{ message: string }> =>
+    request(`/announcements/${id}`, {
+      method: "PUT",
+      body: data as unknown as Record<string, unknown>,
+    }),
+
+  deleteAnnouncement: (id: number): Promise<{ message: string }> =>
+    request(`/announcements/${id}`, { method: "DELETE" }),
 };
 
 export async function saveSession(

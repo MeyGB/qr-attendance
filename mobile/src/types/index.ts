@@ -30,6 +30,20 @@ export interface NewLeaveRequestInput {
   reason?: string;
 }
 
+export interface Announcement {
+  id: number;
+  title: string;
+  body: string;
+  author_name: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface NewAnnouncementInput {
+  title: string;
+  body: string;
+}
+
 export interface Employee {
   id: number;
   full_name: string;
@@ -115,6 +129,9 @@ export type RootStackParamList = {
   EmployeeForm: { employee?: Employee } | undefined;
   LeaveForm: undefined;
   LeaveApproval: undefined;
+  AnnouncementList: undefined;
+  AdminAnnouncements: undefined;
+  AnnouncementForm: { announcement?: Announcement } | undefined;
 };
 
 // Bottom tabs live inside "Main" (employee role)
