@@ -94,6 +94,15 @@ export interface AttendanceRecord {
   status: AttendanceStatus;
 }
 
+export interface TodayAttendance {
+  id: number;
+  date: string;
+  check_in_time: string | null;
+  check_out_time: string | null;
+  status: "present" | "late" | "absent" | "half_day";
+  created_at: string;
+}
+
 export interface AdminAttendanceRecord extends AttendanceRecord {
   full_name: string;
   employee_code: string;
@@ -107,10 +116,12 @@ export interface LoginResponse {
 export interface CheckInResponse {
   message: string;
   status: AttendanceStatus;
+  time: string;
 }
 
 export interface CheckOutResponse {
   message: string;
+  time: string;
 }
 
 export interface ApiErrorBody {

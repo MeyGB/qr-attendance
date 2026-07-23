@@ -16,6 +16,7 @@ import type {
   Announcement,
   NewAnnouncementInput,
   ApiErrorBody,
+  TodayAttendance,
 } from "../types";
 
 // Your live backend's base URL.
@@ -77,6 +78,9 @@ export const api = {
 
   getHistory: (): Promise<AttendanceRecord[]> =>
     request<AttendanceRecord[]>("/attendance/history"),
+
+  getToday: (): Promise<TodayAttendance> =>
+    request<TodayAttendance>("/attendance/today"),
 
   getMe: (): Promise<Employee> => request<Employee>("/employees/me"),
 
