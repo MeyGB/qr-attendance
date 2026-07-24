@@ -52,6 +52,9 @@ export interface Employee {
   role: Role;
   department: string | null;
   shift_id?: number | null;
+  shift_name?: string | null;
+  shift_start_time?: string | null;
+  shift_end_time?: string | null;
   is_active?: number;
 }
 
@@ -99,7 +102,7 @@ export interface TodayAttendance {
   date: string;
   check_in_time: string | null;
   check_out_time: string | null;
-  status: "present" | "late" | "absent" | "half_day";
+  status: AttendanceStatus;
   created_at: string;
 }
 

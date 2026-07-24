@@ -56,7 +56,7 @@ export default function AnnouncementListScreen() {
   }
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View style={[styles.container, { paddingTop: insets.top + spacing.sm }]}>
       <View style={styles.header}>
         <TouchableOpacity
           onPress={() => navigation.goBack()}
@@ -87,7 +87,11 @@ export default function AnnouncementListScreen() {
         ListEmptyComponent={
           <View style={styles.emptyWrap}>
             <View style={styles.emptyIconWrap}>
-              <Feather name="megaphone" size={28} color={colors.accentDeep} />
+              <Feather
+                name="message-square"
+                size={28}
+                color={colors.accentDeep}
+              />
             </View>
             <Text style={styles.emptyHeading}>No announcements yet</Text>
             <Text style={styles.emptySubtext}>

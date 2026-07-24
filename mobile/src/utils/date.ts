@@ -48,9 +48,27 @@ export function formatRelativeDate(value: string): string {
 
 export function formatTime(value: string | null): string {
   if (!value) return "—";
+
+  // Handle MySQL TIME format: HH:mm:ss
+  if (/^\d{2}:\d{2}:\d{2}$/.test(value)) {
+    const [hour, minute] = value.split(":");
+
+    const date = new Date();
+    date.setHours(Number(hour));
+    date.setMinutes(Number(minute));
+
+    return date.toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
+  }
+
+  // Handle full datetime
   return new Date(value).toLocaleTimeString([], {
     hour: "2-digit",
     minute: "2-digit",
+    hour12: true,
   });
 }
 
@@ -105,4 +123,19 @@ export function monthStats(records: AttendanceRecord[]) {
     late: thisMonth.filter((r) => r.status === "late").length,
     absent: thisMonth.filter((r) => r.status === "absent").length,
   };
+}
+
+// Computes elapsed working time between check-in and (check-out or now).
+// Returns null if there's nothing to show yet (no check-in).
+export function getWorkingDuration(
+  checkIn: string | null | undefined,
+  checkOut: string | null | undefined,
+): string | null {
+  if (!checkIn) return null;
+  const start = new Date(checkIn).getTime();
+  const end = checkOut ? new Date(checkOut).getTime() : Date.now();
+  const totalMinutes = Math.max(0, Math.floor((end - start) / 60000));
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  return `${hours}h ${minutes}m`;
 }
