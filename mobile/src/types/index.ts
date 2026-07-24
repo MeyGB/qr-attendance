@@ -30,18 +30,30 @@ export interface NewLeaveRequestInput {
   reason?: string;
 }
 
+export type AnnouncementType = "general" | "important" | "event" | "policy";
 export interface Announcement {
   id: number;
   title: string;
   body: string;
-  author_name: string;
+  author_name: string | null;
+  type: AnnouncementType;
+  is_pinned: boolean;
   created_at: string;
-  updated_at: string;
+  updated_at: string | null;
 }
 
 export interface NewAnnouncementInput {
   title: string;
   body: string;
+  type?: AnnouncementType;
+  is_pinned?: boolean;
+}
+
+export interface UpdateAnnouncementInput {
+  title?: string;
+  body?: string;
+  type?: AnnouncementType;
+  is_pinned?: boolean;
 }
 
 export interface Employee {
@@ -144,6 +156,7 @@ export type RootStackParamList = {
   LeaveForm: undefined;
   LeaveApproval: undefined;
   AnnouncementList: undefined;
+  AnnouncementDetail: { announcement: Announcement };
   AdminAnnouncements: undefined;
   AnnouncementForm: { announcement?: Announcement } | undefined;
 };

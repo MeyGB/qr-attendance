@@ -130,6 +130,7 @@ export default function AdminAnnouncementsScreen() {
                 <Text style={styles.cardTitle}>{item.title}</Text>
                 <Text style={styles.cardMeta}>
                   {formatRelativeDate(item.created_at)}
+                  {/* {item.author_name ? ` • ${item.author_name}` : ""} */}
                 </Text>
               </View>
               <TouchableOpacity

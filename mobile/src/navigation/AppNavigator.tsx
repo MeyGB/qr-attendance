@@ -14,6 +14,7 @@ import EmployeeFormScreen from "../screens/admin/EmployeeFormScreen";
 import LeaveFormScreen from "../screens/LeaveFormScreen";
 import AdminLeaveApprovalScreen from "../screens/admin/AdminLeaveApprovalScreen";
 import AnnouncementListScreen from "../screens/AnnouncementListScreen";
+import AnnouncementDetailScreen from "../screens/AnnouncementDetailScreen";
 import AdminAnnouncementsScreen from "../screens/admin/AdminAnnouncementsScreen";
 import AnnouncementFormScreen from "../screens/admin/AnnouncementFormScreen";
 
@@ -62,6 +63,11 @@ export default function AppNavigator() {
           name="AnnouncementList"
           component={AnnouncementListScreen}
         />
+        <Stack.Screen
+          name="AnnouncementDetail"
+          component={AnnouncementDetailScreen}
+        />
+
         <Stack.Screen
           name="AdminAnnouncements"
           component={AdminAnnouncementsScreen}

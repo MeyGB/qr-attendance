@@ -7,12 +7,15 @@ import {
   TouchableOpacity,
   Animated,
   Easing,
+  ActivityIndicator,
+  Vibration,
 } from "react-native";
 import {
   CameraView,
   useCameraPermissions,
   type BarcodeScanningResult,
 } from "expo-camera";
+import * as Haptics from "expo-haptics";
 import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
@@ -50,27 +53,38 @@ export default function ScanScreen({ navigation, route }: Props) {
   useEffect(() => {
     let cancelled = false;
 
-    api
-      .getToday()
-      .then((record) => {
-        console.log("record", record);
-
+    async function detectMode() {
+      try {
+        const today = await api.getToday();
         if (cancelled) return;
 
-        if (record?.check_in_time && !record.check_out_time) {
+        if (today?.check_in_time && !today?.check_out_time) {
           setMode("check-out");
-        } else if (!record?.check_in_time) {
+        } else {
           setMode("check-in");
         }
-      })
-      .catch(() => {
-        // Ignore error
-      });
+      } catch (error) {
+        console.log("Detect mode error", error);
+      } finally {
+        if (!cancelled) setCheckingAttendance(false);
+      }
+    }
 
+    detectMode();
     return () => {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    if (!success) return;
+
+    const timer = setTimeout(() => {
+      navigation.goBack();
+    }, 1800); // 1.8 seconds
+
+    return () => clearTimeout(timer);
+  }, [success, navigation]);
 
   // Scan line animation — loops up and down inside the viewfinder frame.
   const scanLineAnim = useRef(new Animated.Value(0)).current;
@@ -126,17 +140,20 @@ export default function ScanScreen({ navigation, route }: Props) {
         mode === "check-in"
           ? await api.checkIn(data)
           : await api.checkOut(data);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setSuccess({
         mode,
         message: result.message,
         time: result.time,
       });
     } catch (err) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       const message =
         err instanceof Error ? err.message : "Something went wrong";
       Alert.alert("Scan failed", message, [
         {
           text: "Try Again",
+          style: "destructive",
           onPress: () => {
             scanLockRef.current = false;
             setScanned(false);
@@ -171,6 +188,15 @@ export default function ScanScreen({ navigation, route }: Props) {
     );
   }
 
+  if (checkingAttendance) {
+    return (
+      <View style={styles.loading}>
+        <ActivityIndicator size="large" color={colors.accent} />
+
+        <Text style={styles.loadingText}>Checking attendance...</Text>
+      </View>
+    );
+  }
   return (
     <View style={styles.container}>
       <TouchableOpacity
@@ -195,7 +221,7 @@ export default function ScanScreen({ navigation, route }: Props) {
         />
       </TouchableOpacity>
 
-      <View style={[styles.modeSwitch, { top: insets.top + 14 }]}>
+      {/* <View style={[styles.modeSwitch, { top: insets.top + 14 }]}>
         <TouchableOpacity
           style={[
             styles.modeButton,
@@ -226,7 +252,7 @@ export default function ScanScreen({ navigation, route }: Props) {
             Check Out
           </Text>
         </TouchableOpacity>
-      </View>
+      </View> */}
 
       <CameraView
         style={StyleSheet.absoluteFillObject}
@@ -268,6 +294,17 @@ const FRAME = 240;
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#000" },
+  loading: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#000",
+  },
+
+  loadingText: {
+    color: "#fff",
+    fontSize: 16,
+  },
   permissionContainer: {
     flex: 1,
     justifyContent: "center",

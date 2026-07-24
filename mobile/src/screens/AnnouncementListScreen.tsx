@@ -10,11 +10,12 @@ import {
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { Feather } from "@expo/vector-icons";
+import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import type { RootStackParamList, Announcement } from "../types";
 import { api } from "../services/api";
 import { colors, radius, spacing, shadow } from "../theme/theme";
 import { formatRelativeDate } from "../utils/date";
+import { ANNOUNCEMENT_TYPE_META } from "../utils/AnnouncementTypes";
 import LoadingView from "../components/LoadingView";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -99,15 +100,69 @@ export default function AnnouncementListScreen() {
             </Text>
           </View>
         }
-        renderItem={({ item }) => (
-          <View style={[styles.card, shadow.card]}>
-            <Text style={styles.cardTitle}>{item.title}</Text>
-            <Text style={styles.cardMeta}>
-              {item.author_name} · {formatRelativeDate(item.created_at)}
-            </Text>
-            <Text style={styles.cardBody}>{item.body}</Text>
-          </View>
-        )}
+        renderItem={({ item }) => {
+          const typeMeta = ANNOUNCEMENT_TYPE_META[item.type];
+
+          return (
+            <TouchableOpacity
+              style={[styles.card, shadow.card]}
+              activeOpacity={0.75}
+              onPress={() =>
+                navigation.navigate("AnnouncementDetail", {
+                  announcement: item,
+                })
+              }
+            >
+              <View style={[styles.iconWrap, { backgroundColor: typeMeta.bg }]}>
+                <Feather
+                  name={
+                    item.type === "event"
+                      ? "calendar"
+                      : item.type === "important"
+                        ? "alert-circle"
+                        : item.type === "policy"
+                          ? "file-text"
+                          : "message-square"
+                  }
+                  size={18}
+                  color={typeMeta.fg}
+                />
+              </View>
+
+              <View style={styles.content}>
+                <View style={styles.badgeRow}>
+                  <Text style={[styles.typeText, { color: typeMeta.fg }]}>
+                    {typeMeta.label}
+                  </Text>
+
+                  {/* {item.is_pinned && (
+                    <>
+                      <Text style={styles.dot}>●</Text>
+                      <Feather name="chevron-right" size={16} color="#666" />
+                      <Feather
+                        name="bookmark"
+                        size={11}
+                        color={colors.accent}
+                      />
+
+                      <Text style={styles.pinText}>Pinned</Text>
+                    </>
+                  )} */}
+                </View>
+
+                <Text numberOfLines={1} style={styles.cardTitle}>
+                  {item.title}
+                </Text>
+
+                <Text style={styles.cardDate}>
+                  {formatRelativeDate(item.created_at)}
+                </Text>
+              </View>
+
+              <Feather name="chevron-right" size={18} color={colors.inkFaint} />
+            </TouchableOpacity>
+          );
+        }}
       />
     </View>
   );
@@ -128,6 +183,63 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: "700",
     color: colors.ink,
+  },
+  card: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.surface,
+    borderRadius: 18,
+    padding: 14,
+    marginBottom: 12,
+  },
+
+  iconWrap: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 14,
+  },
+
+  content: {
+    flex: 1,
+  },
+
+  badgeRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 4,
+  },
+
+  typeText: {
+    fontSize: 11,
+    fontWeight: "700",
+  },
+
+  dot: {
+    marginHorizontal: 6,
+    color: colors.inkFaint,
+    fontSize: 10,
+  },
+
+  pinText: {
+    marginLeft: 4,
+    fontSize: 11,
+    fontWeight: "700",
+    color: colors.accent,
+  },
+
+  cardTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: colors.ink,
+  },
+
+  cardDate: {
+    marginTop: 3,
+    fontSize: 13,
+    color: colors.inkFaint,
   },
 
   errorCard: {
@@ -172,18 +284,14 @@ const styles = StyleSheet.create({
   },
   emptySubtext: { fontSize: 13, color: colors.inkSoft },
 
-  card: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    padding: spacing.md,
-    marginBottom: spacing.sm,
+  cardPinned: { borderWidth: 1, borderColor: colors.amber },
+  titleRow: { flexDirection: "row", alignItems: "center" },
+  metaRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 4 },
+  typeBadge: {
+    borderRadius: radius.pill,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
   },
-  cardTitle: { fontSize: 16, fontWeight: "700", color: colors.ink },
-  cardMeta: {
-    fontSize: 12,
-    color: colors.inkFaint,
-    marginTop: 2,
-    marginBottom: spacing.sm,
-  },
-  cardBody: { fontSize: 14, color: colors.inkSoft, lineHeight: 20 },
+  typeBadgeText: { fontSize: 10, fontWeight: "700" },
+  cardMeta: { fontSize: 11, color: colors.inkFaint, flexShrink: 1 },
 });

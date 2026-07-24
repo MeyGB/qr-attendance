@@ -37,15 +37,29 @@ import {
   formatLongDate,
   monthStats,
   isSameDate,
+  getWorkingDuration,
 } from "../utils/date";
 import StatChip from "../components/StatChip";
 import TicketCard from "../components/TicketCard";
 import LoadingView from "../components/LoadingView";
+import { ActionButton } from "@/components/ActionButton";
 
 type Props = CompositeScreenProps<
   BottomTabScreenProps<MainTabParamList, "Home">,
   NativeStackScreenProps<RootStackParamList>
 >;
+
+function getStatusPill(status: AttendanceRecord["status"] | undefined) {
+  if (!status) return null;
+  const meta = statusStyles[status];
+  const pillLabel =
+    status === "present"
+      ? "On Time"
+      : status === "half_day"
+        ? "Half Day"
+        : meta.label;
+  return { label: meta.label, pillLabel, fg: meta.fg, bg: meta.bg };
+}
 
 export default function HomeScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
@@ -62,6 +76,7 @@ export default function HomeScreen({ navigation }: Props) {
         api.getHistory(),
         api.getAnnouncements().catch(() => []),
       ]);
+      console.log("Current user:", meResult);
       setMe(meResult);
       setHistory(historyResult);
       setAnnouncements(announcementsResult);
@@ -90,6 +105,13 @@ export default function HomeScreen({ navigation }: Props) {
   const isCheckedIn = Boolean(today?.check_in_time && !today?.check_out_time);
   const isDoneForToday = Boolean(today?.check_in_time && today?.check_out_time);
   const isNotStarted = !today?.check_in_time;
+
+  const statusPill = getStatusPill(today?.status);
+  const workingDuration = getWorkingDuration(
+    today?.check_in_time,
+    today?.check_out_time,
+  );
+  const shiftEndTime = formatTime(me?.shift_end_time ?? null);
 
   const soon = (title: string) =>
     Alert.alert(title, "This section is coming in a future update.");
@@ -124,12 +146,6 @@ export default function HomeScreen({ navigation }: Props) {
           <View style={{ flex: 1 }}>
             <Text style={styles.heroGreeting}>Welcome back,</Text>
             <Text style={styles.heroName}>{me?.full_name ?? "..."} 👋</Text>
-            {/* {me?.employee_code && (
-              <Text style={styles.heroMeta}>
-                {me.employee_code}
-                {me.department ? ` · ${me.department}` : ""}
-              </Text>
-            )} */}
           </View>
           <TouchableOpacity
             style={styles.bellButton}
@@ -142,30 +158,68 @@ export default function HomeScreen({ navigation }: Props) {
 
       {/* Today status */}
       <View style={[styles.todayCard, shadow.card]}>
-        <Text style={styles.todayLabel}>TODAY</Text>
-        <View style={styles.todayTimesRow}>
-          <View style={styles.todayTimeBlock}>
-            <Text style={styles.todayTimeLabel}>Checked in</Text>
-            <Text style={styles.todayTimeValue}>
+        <Text style={styles.todayLabel}>TODAY'S STATUS</Text>
+
+        <View style={styles.statusTopRow}>
+          <View style={styles.statusLeft}>
+            {today?.status ? (
+              <View style={styles.statusLine}>
+                <Text
+                  style={[styles.statusHeadline, { color: statusPill?.fg }]}
+                >
+                  {statusPill?.label}
+                </Text>
+                {statusPill && (
+                  <View
+                    style={[
+                      styles.statusPill,
+                      { backgroundColor: statusPill.bg },
+                    ]}
+                  >
+                    <Feather name="check" size={11} color={statusPill.fg} />
+                    <Text
+                      style={[styles.statusPillText, { color: statusPill.fg }]}
+                    >
+                      {statusPill.pillLabel}
+                    </Text>
+                  </View>
+                )}
+              </View>
+            ) : (
+              <Text style={styles.statusHeadlineMuted}>Not checked in</Text>
+            )}
+          </View>
+
+          <View style={styles.checkInBlock}>
+            <Text style={styles.checkColLabel}>Check In</Text>
+            <Text style={styles.checkInValue}>
               {formatTime(today?.check_in_time ?? null)}
             </Text>
           </View>
-          <View style={styles.todayDivider} />
-          <View style={styles.todayTimeBlock}>
-            <Text style={styles.todayTimeLabel}>Checked out</Text>
-            <Text style={styles.todayTimeValue}>
+        </View>
+
+        <View style={styles.metricsRow}>
+          <View style={styles.metricBlock}>
+            <Text style={styles.checkColLabel}>Working</Text>
+            <Text style={styles.metricValue}>{workingDuration ?? "—"}</Text>
+          </View>
+          <View style={styles.metricBlock}>
+            <Text style={styles.checkColLabel}>Shift End</Text>
+            <Text style={styles.metricValue}>{shiftEndTime}</Text>
+          </View>
+          <View style={styles.metricBlock}>
+            <Text style={styles.checkColLabel}>Check Out</Text>
+            <Text style={styles.metricValue}>
               {formatTime(today?.check_out_time ?? null)}
             </Text>
           </View>
         </View>
 
-        {isDoneForToday && (
-          <View style={[styles.statusBanner, styles.bannerDone]}>
-            <Feather name="check-circle" size={16} color={colors.accentDeep} />
-            <Text
-              style={[styles.statusBannerText, { color: colors.accentDeep }]}
-            >
-              All done for today
+        {isNotStarted && (
+          <View style={[styles.statusBanner, styles.bannerPending]}>
+            <Feather name="camera" size={16} color={colors.inkSoft} />
+            <Text style={[styles.statusBannerText, { color: colors.inkSoft }]}>
+              Tap QR Scan to check in
             </Text>
           </View>
         )}
@@ -177,36 +231,40 @@ export default function HomeScreen({ navigation }: Props) {
             </Text>
           </View>
         )}
-        {isNotStarted && (
-          <View style={[styles.statusBanner, styles.bannerPending]}>
-            <Feather name="camera" size={16} color={colors.inkSoft} />
-            <Text style={[styles.statusBannerText, { color: colors.inkSoft }]}>
-              Tap QR Scan to check in
+        {isDoneForToday && (
+          <View style={[styles.statusBanner, styles.bannerDone]}>
+            <Feather name="check-circle" size={16} color={colors.accentDeep} />
+            <Text
+              style={[styles.statusBannerText, { color: colors.accentDeep }]}
+            >
+              All done for today
             </Text>
           </View>
         )}
       </View>
 
       <Text style={styles.sectionTitle}>This month</Text>
-      <View style={styles.statsRow}>
-        <StatChip
-          label="Present"
-          value={stats.present}
-          color={statusStyles.present.fg}
-          background={statusStyles.present.bg}
-        />
-        <StatChip
-          label="Late"
-          value={stats.late}
-          color={statusStyles.late.fg}
-          background={statusStyles.late.bg}
-        />
-        <StatChip
-          label="Absent"
-          value={stats.absent}
-          color={statusStyles.absent.fg}
-          background={statusStyles.absent.bg}
-        />
+      <View style={shadow.card}>
+        <View style={styles.statsRow}>
+          <StatChip
+            label="Present"
+            value={stats.present}
+            color={statusStyles.present.fg}
+            background={statusStyles.present.bg}
+          />
+          <StatChip
+            label="Late"
+            value={stats.late}
+            color={statusStyles.late.fg}
+            background={statusStyles.late.bg}
+          />
+          <StatChip
+            label="Absent"
+            value={stats.absent}
+            color={statusStyles.absent.fg}
+            background={statusStyles.absent.bg}
+          />
+        </View>
       </View>
 
       {/* Quick actions */}
@@ -227,7 +285,7 @@ export default function HomeScreen({ navigation }: Props) {
           onPress={() => navigation.navigate("Leave")}
         />
         <ActionButton
-          icon="megaphone"
+          icon="message-square"
           label="Announce"
           color={colors.violet}
           background={colors.violetSoft}
@@ -242,9 +300,9 @@ export default function HomeScreen({ navigation }: Props) {
         />
       </View>
 
-      {announcements.length > 0 && (
+      {/* {announcements.length > 0 && (
         <>
-          <View style={styles.recentHeader}>
+          <View style={styles.activityHeader}>
             <Text style={styles.sectionTitle}>Announcements</Text>
             <Text
               style={styles.seeAll}
@@ -265,55 +323,42 @@ export default function HomeScreen({ navigation }: Props) {
             </View>
           ))}
         </>
-      )}
+      )} */}
 
-      <View style={styles.recentHeader}>
-        <Text style={styles.sectionTitle}>Recent activity</Text>
-        <Text
-          style={styles.seeAll}
+      <View style={styles.activityHeader}>
+        <View>
+          <Text style={styles.activityTitle}>Recent Activity</Text>
+          <Text style={styles.activitySubtitle}>
+            Your latest attendance records
+          </Text>
+        </View>
+
+        <TouchableOpacity
+          style={styles.seeAllButton}
           onPress={() => navigation.navigate("History")}
+          activeOpacity={0.7}
         >
-          See all
-        </Text>
+          <Text style={styles.seeAll}>See all</Text>
+          <Feather name="chevron-right" size={15} color={colors.accent} />
+        </TouchableOpacity>
       </View>
 
       {recent.length === 0 && (
-        <Text style={styles.emptyText}>No attendance recorded yet.</Text>
+        <View style={[styles.emptyCard, shadow.card]}>
+          <Feather name="clock" size={24} color={colors.inkFaint} />
+          <Text style={styles.emptyTitle}>No activity yet</Text>
+          <Text style={styles.emptyText}>
+            Your attendance records will appear here.
+          </Text>
+        </View>
       )}
 
-      <View style={{ marginHorizontal: spacing.lg }}>
+      <View style={styles.activityList}>
         {recent.map((r) => (
           <TicketCard key={r.id} record={r} />
         ))}
       </View>
     </ScrollView>
-  );
-}
-
-function ActionButton({
-  icon,
-  label,
-  color,
-  background,
-  onPress,
-}: {
-  icon: keyof typeof Feather.glyphMap;
-  label: string;
-  color: string;
-  background: string;
-  onPress: () => void;
-}) {
-  return (
-    <TouchableOpacity
-      style={styles.actionButton}
-      activeOpacity={0.7}
-      onPress={onPress}
-    >
-      <View style={[styles.actionIconWrap, { backgroundColor: background }]}>
-        <Feather name={icon} size={18} color={color} />
-      </View>
-      <Text style={styles.actionLabel}>{label}</Text>
-    </TouchableOpacity>
   );
 }
 
@@ -324,9 +369,9 @@ const styles = StyleSheet.create({
   hero: {
     backgroundColor: colors.accentDeep,
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.xl,
-    paddingBottom: spacing.lg,
-    marginBottom: spacing.lg,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.md,
+    marginBottom: spacing.md,
   },
   heroDate: {
     color: "rgba(255,255,255,0.7)",
@@ -346,14 +391,13 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   avatarText: { color: colors.white, fontWeight: "700", fontSize: 18 },
-  heroGreeting: { color: "rgba(255,255,255,0.8)", fontSize: 13 },
+  heroGreeting: { color: "rgba(255,255,255,0.8)", fontSize: 16 },
   heroName: {
     color: colors.white,
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: "700",
     marginTop: 2,
   },
-  heroMeta: { color: "rgba(255,255,255,0.65)", fontSize: 12, marginTop: 2 },
   bellButton: {
     width: 40,
     height: 40,
@@ -377,24 +421,58 @@ const styles = StyleSheet.create({
     color: colors.inkFaint,
     marginBottom: spacing.md,
   },
-  todayTimesRow: {
+
+  statusTopRow: {
     flexDirection: "row",
-    alignItems: "center",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
     marginBottom: spacing.lg,
   },
-  todayTimeBlock: { flex: 1 },
-  todayTimeLabel: { fontSize: 13, color: colors.inkSoft, marginBottom: 4 },
-  todayTimeValue: {
+  statusLeft: { flex: 1 },
+  statusLine: {
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  statusHeadline: { fontSize: 22, fontWeight: "700" },
+  statusHeadlineMuted: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: colors.inkFaint,
+  },
+  statusPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: radius.pill,
+  },
+  statusPillText: { fontSize: 12, fontWeight: "700" },
+
+  checkInBlock: { alignItems: "flex-end" },
+  checkColLabel: { fontSize: 12, color: colors.inkSoft, marginBottom: 4 },
+  checkInValue: {
     fontFamily: monoFont,
     fontSize: 22,
     fontWeight: "700",
     color: colors.ink,
   },
-  todayDivider: {
-    width: 1,
-    height: 40,
-    backgroundColor: colors.border,
-    marginHorizontal: spacing.md,
+
+  metricsRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingTop: spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  metricBlock: { alignItems: "flex-start" },
+  metricValue: {
+    fontFamily: monoFont,
+    fontSize: 16,
+    fontWeight: "700",
+    color: colors.ink,
   },
 
   statusBanner: {
@@ -404,6 +482,7 @@ const styles = StyleSheet.create({
     gap: 8,
     borderRadius: radius.pill,
     paddingVertical: 12,
+    marginTop: spacing.md,
   },
   bannerDone: { backgroundColor: colors.accentSoft },
   bannerActive: { backgroundColor: colors.amberSoft },
@@ -424,21 +503,6 @@ const styles = StyleSheet.create({
     marginHorizontal: spacing.lg,
     marginBottom: spacing.lg,
   },
-  actionButton: { alignItems: "center", width: "23%" },
-  actionIconWrap: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 6,
-  },
-  actionLabel: {
-    fontSize: 11,
-    fontWeight: "600",
-    color: colors.ink,
-    textAlign: "center",
-  },
 
   statsRow: {
     flexDirection: "row",
@@ -447,18 +511,63 @@ const styles = StyleSheet.create({
     marginHorizontal: spacing.lg,
   },
 
-  recentHeader: {
+  activityHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     marginHorizontal: spacing.lg,
+    marginBottom: spacing.md,
   },
-  seeAll: { fontSize: 13, fontWeight: "600", color: colors.accent },
-  emptyText: {
-    color: colors.inkFaint,
-    fontSize: 14,
-    marginTop: spacing.sm,
+
+  activityTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: colors.ink,
+  },
+
+  activitySubtitle: {
+    fontSize: 12,
+    color: colors.inkSoft,
+    marginTop: 3,
+  },
+
+  seeAllButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 2,
+  },
+
+  seeAll: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: colors.accent,
+  },
+
+  activityList: {
     marginHorizontal: spacing.lg,
+  },
+
+  emptyCard: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    marginHorizontal: spacing.lg,
+    paddingVertical: spacing.xl,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  emptyTitle: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: colors.ink,
+    marginTop: spacing.sm,
+  },
+
+  emptyText: {
+    fontSize: 13,
+    color: colors.inkSoft,
+    marginTop: 4,
+    textAlign: "center",
   },
 
   announcementCard: {
